@@ -1,33 +1,13 @@
 ---
 # tasks file for consul-config
-- name: install packages
-  apt:
-    name: "{{ item }}"
-    state: present
-  with_items:
-    - python-pip
-- name: install pip packages
-  pip:
-    name: "{{ item }}"
-    state: present
-  with_items:
-    - awscli
-
-- name: register instance id
-  command: "ec2metadata --instance-id"
-  register: instance_id
-- debug: var=instance_id
-- name: register region
-  shell: curl -s http://169.254.169.254/latest/dynamic/instance-identity/document | grep region | awk -F\" '{print $4}'
-  register: region
-- debug: var=region
-- name: register tag value
-  shell: "/usr/local/bin/aws ec2 describe-tags --filters 'Name=resource-id,Values={{            instance_id.stdout }}' 'Name=key,Values=Name' --region={{ region.stdout }} --output=text | cut -f5"
-  register: name_tag
-- debug: var=name_tag
+- debug:
+    var: ec2_tag_Name
+- name: search and replace _ with -
+  command: echo "{{ ec2_tag_Name }}" | sed -r 's/[_]+/-/g'
+  register: ec2_tag_hostname
 - name: register current hostname
-  command: "hostname"
+  command: "/sbin/ifconfig|grep inet|head -1|sed 's/\:/ /'|awk '{print $3}'"
   register: hostname
 - debug: var=hostname
 - hostname:
-    name: "{{ name_tag }}@{{ hostname }}"
+    name: "{{ ec2_tag_hostname }}@{{ hostname }}"
