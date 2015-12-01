@@ -3,11 +3,15 @@
 - debug:
     var: ec2_tag_Name
 - name: search and replace _ with -
-  command: echo "{{ ec2_tag_Name }}" | sed -r 's/[_]+/-/g'
+  shell: "echo {{ ec2_tag_Name }} | sed -r 's/[_]+/-/g'"
   register: ec2_tag_hostname
-- name: register current hostname
-  command: "/sbin/ifconfig|grep inet|head -1|sed 's/\:/ /'|awk '{print $3}'"
-  register: hostname
-- debug: var=hostname
+- debug:
+    var: ec2_tag_hostname
+- name: search and replace _ with -
+  shell: "echo {{ inventory_hostname }} | sed -r 's/[.]+/-/g'"
+  register: ec2_tag_hostname_ip
+- debug:
+    var: ec2_tag_hostname_ip
 - hostname:
-    name: "{{ ec2_tag_hostname }}@{{ hostname }}"
+    name: "{{ ec2_tag_hostname.stdout }}-{{ ec2_tag_hostname_ip.stdout }}"
+  sudo: true
